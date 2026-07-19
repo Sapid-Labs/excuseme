@@ -1,8 +1,9 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { homedir } from "node:os";
-import { join, dirname } from "node:path";
+import { join } from "node:path";
 import { loadConfig } from "./config.js";
 import { setAway, clearAway } from "./flag.js";
+import { writeJsonAtomic } from "./outstanding.js";
 
 const STATE_PATH = join(homedir(), ".claude", "excuseme-state.json");
 
@@ -73,8 +74,10 @@ function readState() {
 }
 
 function writeState(state) {
-  mkdirSync(dirname(STATE_PATH), { recursive: true });
-  writeFileSync(STATE_PATH, JSON.stringify(state, null, 2) + "\n");
+  // Atomic: two hooks can fire simultaneously in different sessions, and a
+  // torn write would leave the cursor unparseable (silently reprocessing every
+  // control message from scratch).
+  writeJsonAtomic(STATE_PATH, state);
 }
 
 /**

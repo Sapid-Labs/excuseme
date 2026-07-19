@@ -40,17 +40,28 @@ function check(method, json) {
  * endpoint and an always-on listener. Numbered options + a threaded reply gets
  * the same answer with no server at all.
  */
-export async function postQuestion(config, { question, options, context }) {
-  const lines = [`*${question}*`];
+export async function postQuestion(config, { question, options, context, project, session, multi }) {
+  const lines = [];
+
+  // Label first: with two sessions asking at once, the questions are otherwise
+  // indistinguishable and you cannot tell which thread to answer.
+  const label = [project, session && `\`${session}\``].filter(Boolean).join(" · ");
+  if (label) lines.push(label);
+
+  lines.push(`*${question}*`);
 
   if (options.length) {
     lines.push("");
     options.forEach((opt, i) => lines.push(`  *${i + 1}.*  ${opt}`));
     lines.push("");
-    lines.push("_Reply in thread with a number, or type your own answer._");
+    lines.push(
+      multi
+        ? "_Reply with numbers (e.g. `1,3`), or type your own answer._"
+        : "_Reply with a number, or type your own answer._",
+    );
   } else {
     lines.push("");
-    lines.push("_Reply in thread._");
+    lines.push("_Reply to answer._");
   }
 
   if (context) lines.push(`\n\`${context}\``);
@@ -79,6 +90,29 @@ export async function fetchReplies(config, threadTs) {
     .filter((m) => m.ts !== threadTs)
     .filter((m) => !m.bot_id && m.subtype !== "bot_message")
     .filter((m) => typeof m.text === "string" && m.text.trim().length > 0);
+}
+
+/**
+ * Messages posted in the channel itself (not in the thread) after `sinceTs`.
+ *
+ * Replying in the main DM instead of in-thread is an easy slip, especially on
+ * mobile, and conversations.replies will never surface it — the question would
+ * just time out. Callers must only trust this when a single question is
+ * outstanding, since a loose message carries no indication of what it answers.
+ */
+export async function fetchChannelReplies(config, sinceTs) {
+  const res = await get(config.token, "conversations.history", {
+    channel: config.channel,
+    oldest: sinceTs,
+    limit: "20",
+  });
+
+  return (res.messages || [])
+    .filter((m) => !m.bot_id && m.subtype !== "bot_message")
+    .filter((m) => m.ts !== sinceTs) // `oldest` is inclusive
+    .filter((m) => !m.thread_ts || m.thread_ts === m.ts) // exclude thread replies
+    .filter((m) => typeof m.text === "string" && m.text.trim().length > 0)
+    .reverse(); // oldest first
 }
 
 export async function postAck(config, threadTs, text) {

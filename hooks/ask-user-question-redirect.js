@@ -15,7 +15,7 @@
 import { readFlag } from "../src/flag.js";
 import { syncFromSlack, ackControl } from "../src/control.js";
 import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { dirname, join, basename } from "node:path";
 
 const CLI = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "cli.js");
 
@@ -60,6 +60,13 @@ process.stdin.on("end", () => {
   const input = payload.tool_input || {};
   const questions = Array.isArray(input.questions) ? input.questions : [];
 
+  // Label the Slack message so concurrent sessions are tellable apart.
+  const project = payload.cwd ? basename(payload.cwd) : null;
+  const session = payload.session_id ? String(payload.session_id).slice(0, 8) : null;
+  const labels =
+    (project ? ` --project ${JSON.stringify(project)}` : "") +
+    (session ? ` --session ${JSON.stringify(session)}` : "");
+
   const rendered = questions
     .map((q) => {
       // Repeated --option, never --options: labels routinely contain commas
@@ -70,7 +77,10 @@ process.stdin.on("end", () => {
         .filter(Boolean)
         .map((label) => ` --option ${JSON.stringify(label)}`)
         .join("");
-      return `  node ${CLI} ask ${JSON.stringify(q.question || "")}${opts}`;
+      // Carry multiSelect across, or the redirect silently downgrades a
+      // pick-several question to pick-one.
+      const multi = q.multiSelect ? " --multi" : "";
+      return `  node ${CLI} ask ${JSON.stringify(q.question || "")}${opts}${multi}${labels}`;
     })
     .join("\n");
 

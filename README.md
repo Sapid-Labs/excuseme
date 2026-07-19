@@ -127,9 +127,15 @@ To ask manually:
 
 ```bash
 excuseme ask "Deploy to prod?" --option "Yes" --option "No, hold"
+excuseme ask "Which fixes?" --option A --option B --option C --multi   # reply "1,3"
 ```
 
 `ask` exits `0` with the answer on stdout, `3` on timeout, `4` if unconfigured.
+
+Reply with a number to pick an option, `1,3` for multi-select, or type anything
+else to answer in your own words. You can reply **in the thread or in the main
+DM** — a loose channel message is matched to the question when only one is
+waiting.
 
 ---
 
@@ -142,6 +148,23 @@ Three things that look like obvious improvements but don't work. All were tried.
 **Block Kit buttons don't work without a server.** A button click POSTs to the app's interactivity Request URL — a public HTTPS endpoint and an always-on listener. Buttons would render and then silently do nothing. Numbered options plus a threaded reply need none of that.
 
 **Slash commands would need hosting too.** Same Request URL problem, plus a second one: a slash command hits *Slack's* servers, which can't write a file on your laptop. You'd need the flag in a cloud KV and a network read on every hook. DMing the bot `away` gets the same UX with zero infrastructure.
+
+### Concurrent sessions
+
+Nothing polls in the background. Slack is touched in exactly two places: while an
+`ask` is blocking (every 3s on its own thread) and once per `AskUserQuestion` to
+check for `away`/`back` DMs. Idle cost is zero.
+
+Each question is its own Slack thread, so two sessions asking at once can't get
+each other's answers. Messages are labelled `project · session` so you can tell
+which is which.
+
+Because `conversations.replies` only sees *threaded* replies, answering in the
+main DM would otherwise time out silently — an easy slip on mobile. So a loose
+channel message is accepted as the answer **when exactly one question is
+outstanding**, tracked in `~/.claude/excuseme-outstanding.json`. Control words
+(`away`, `back`) are never consumed as answers, and dead PIDs are pruned so a
+killed `ask` can't block the fallback forever.
 
 Smaller decisions:
 

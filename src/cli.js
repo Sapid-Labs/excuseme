@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { basename } from "node:path";
 import { readFlag, setAway, clearAway } from "./flag.js";
 import { ask } from "./ask.js";
 import { loadConfig, requireSlackConfig, CONFIG_PATH, FLAG_PATH } from "./config.js";
@@ -144,6 +145,11 @@ async function main() {
         result = await ask({
           question,
           options,
+          multi: flags.multi === true,
+          // Default the project label to the directory the CLI was run from, so
+          // concurrent sessions are distinguishable without extra plumbing.
+          project: typeof flags.project === "string" ? flags.project : basename(process.cwd()),
+          session: typeof flags.session === "string" ? flags.session.slice(0, 8) : null,
           context: typeof flags.context === "string" ? flags.context : null,
         });
       } catch (err) {
