@@ -1,0 +1,13 @@
+node_modules/
+*.log
+.DS_Store
+
+# Never commit Slack credentials. Config lives in ~/.config/excuseme/config.json,
+# but guard against a stray local copy.
+config.json
+.env
+.env.*
+
+# Brain Fables session notes — local working context. Kept out of the public
+# repo because it references client project names and local absolute paths.
+sessions/

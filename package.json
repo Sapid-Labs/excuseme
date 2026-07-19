@@ -1,0 +1,17 @@
+{
+  "name": "excuseme",
+  "version": "0.1.0",
+  "description": "Relay Claude Code's questions to Slack when you're away from your desk, and bring your answer back.",
+  "type": "module",
+  "bin": {
+    "excuseme": "./src/cli.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "ask": "node src/cli.js ask"
+  },
+  "license": "MIT",
+  "private": true
+}
