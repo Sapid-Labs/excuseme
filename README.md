@@ -133,9 +133,17 @@ excuseme ask "Which fixes?" --option A --option B --option C --multi   # reply "
 `ask` exits `0` with the answer on stdout, `3` on timeout, `4` if unconfigured.
 
 Reply with a number to pick an option, `1,3` for multi-select, or type anything
-else to answer in your own words. You can reply **in the thread or in the main
-DM** — a loose channel message is matched to the question when only one is
-waiting.
+else to answer in your own words. Free text is passed through verbatim, so
+`"3, but branch per PR"` reaches the model exactly as written — the number and
+the caveat both.
+
+**Put your whole answer in one message.** Only the first reply is read; sending
+`2` and then `but only for dev` separately drops the second half silently.
+
+You can reply **in the thread or in the main DM** — a loose channel message is
+matched to the question when only one is waiting. With two or more questions in
+flight the fallback switches off (a stray message would be ambiguous), so reply
+in-thread. Each question is labelled `project · session` to tell them apart.
 
 ### VS Code tasks
 
