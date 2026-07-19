@@ -137,6 +137,66 @@ else to answer in your own words. You can reply **in the thread or in the main
 DM** — a loose channel message is matched to the question when only one is
 waiting.
 
+### VS Code tasks
+
+Toggling from the editor is often quicker than switching to a terminal. Add this
+to your **user-level** `tasks.json` (Cmd+Shift+P → *Tasks: Open User Tasks*) so
+it's available in every project, then run them with Cmd+Shift+P → *Run Task*.
+
+Replace `/absolute/path/to/excuseme` with wherever you cloned it.
+
+```json
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Away",
+            "icon": { "id": "bell-slash", "color": "terminal.ansiYellow" },
+            "type": "shell",
+            "command": "node /absolute/path/to/excuseme/src/cli.js on",
+            "problemMatcher": [],
+            "presentation": { "reveal": "always", "panel": "shared", "clear": true, "close": true }
+        },
+        {
+            "label": "Away for…",
+            "icon": { "id": "watch", "color": "terminal.ansiYellow" },
+            "type": "shell",
+            "command": "node /absolute/path/to/excuseme/src/cli.js on --for ${input:awayMinutes}",
+            "problemMatcher": [],
+            "presentation": { "reveal": "always", "panel": "shared", "clear": true, "close": true }
+        },
+        {
+            "label": "Back",
+            "icon": { "id": "check", "color": "terminal.ansiGreen" },
+            "type": "shell",
+            "command": "node /absolute/path/to/excuseme/src/cli.js off",
+            "problemMatcher": [],
+            "presentation": { "reveal": "always", "panel": "shared", "clear": true, "close": true }
+        },
+        {
+            "label": "Away status",
+            "icon": { "id": "info", "color": "terminal.ansiBlue" },
+            "type": "shell",
+            "command": "node /absolute/path/to/excuseme/src/cli.js status",
+            "problemMatcher": [],
+            "presentation": { "reveal": "always", "panel": "shared", "clear": true }
+        }
+    ],
+    "inputs": [
+        {
+            "id": "awayMinutes",
+            "type": "promptString",
+            "description": "Minutes away",
+            "default": "60"
+        }
+    ]
+}
+```
+
+The toggles set `"close": true` so the panel dismisses itself after the one-line
+confirmation — flipping a flag shouldn't leave a terminal open. `Away status`
+omits it, since its output is the point.
+
 ---
 
 ## Design notes
