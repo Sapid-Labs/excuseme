@@ -24,15 +24,26 @@ function allow() {
   process.exit(0);
 }
 
+// This hook is usually installed globally, so it runs before every question in
+// every project. A broken excuseme install must degrade to "no away-mode", not
+// to an error on every question — the cause would be far from the symptom.
+process.on("uncaughtException", allow);
+process.on("unhandledRejection", allow);
+
 // Question time is the only moment the flag matters, so it's also the right
 // moment to notice an "away" DM sent from a phone. Failures here return null
 // and fall through to the local flag — Slack being down must never stop Claude
 // from asking a question.
-const control = await syncFromSlack();
-if (control) await ackControl(control);
+let flag;
+try {
+  const control = await syncFromSlack();
+  if (control) await ackControl(control);
+  flag = readFlag();
+} catch {
+  allow();
+}
 
-const flag = readFlag();
-if (!flag.away) allow();
+if (!flag?.away) allow();
 
 let raw = "";
 process.stdin.on("data", (c) => (raw += c));
@@ -51,9 +62,15 @@ process.stdin.on("end", () => {
 
   const rendered = questions
     .map((q) => {
-      const opts = (q.options || []).map((o) => o.label).filter(Boolean);
-      const flags = opts.length ? ` --options ${JSON.stringify(opts.join(","))}` : "";
-      return `  node ${CLI} ask ${JSON.stringify(q.question || "")}${flags}`;
+      // Repeated --option, never --options: labels routinely contain commas
+      // ("Yes, fail silently"), and comma-splitting turns one option into two
+      // silently — producing a wrong but entirely plausible list.
+      const opts = (q.options || [])
+        .map((o) => o.label)
+        .filter(Boolean)
+        .map((label) => ` --option ${JSON.stringify(label)}`)
+        .join("");
+      return `  node ${CLI} ask ${JSON.stringify(q.question || "")}${opts}`;
     })
     .join("\n");
 

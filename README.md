@@ -62,7 +62,7 @@ In `~/.claude/settings.json` (global) or `.claude/settings.json` (per project):
         "hooks": [
           {
             "type": "command",
-            "command": "node /absolute/path/to/excuseme/hooks/ask-user-question-redirect.js",
+            "command": "H=/absolute/path/to/excuseme/hooks/ask-user-question-redirect.js; command -v node >/dev/null 2>&1 && [ -f \"$H\" ] && node \"$H\"; exit 0",
             "timeout": 15
           }
         ]
@@ -71,6 +71,12 @@ In `~/.claude/settings.json` (global) or `.claude/settings.json` (per project):
   }
 }
 ```
+
+The guard matters if you install this globally, because then it runs before every
+question in every project. If the repo moves or Node isn't on PATH, an unguarded
+hook errors on every question — and the cause is nowhere near the symptom. With
+the guard, a broken install just means away-mode stops working. The hook also
+traps its own exceptions and exits 0, so a bad config file fails the same way.
 
 ---
 
