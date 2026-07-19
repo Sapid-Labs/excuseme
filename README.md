@@ -74,6 +74,30 @@ In `~/.claude/settings.json` (global) or `.claude/settings.json` (per project):
 
 ---
 
+## Troubleshooting
+
+**"Sending messages to this app has been turned off"**
+
+The App Home messages tab is read-only. If you used `app-manifest.json` this is
+already correct; if you built the app from scratch, go to your app → **App Home**
+→ **Show Tabs** → enable **Messages Tab** and check **"Allow users to send Slash
+commands and messages from the messages tab."**
+
+Then — and this is the part that wastes an afternoon — **each Slack client caches
+that setting separately.** Desktop picks it up after `Cmd+R`. Mobile does not:
+force-quitting isn't enough, and you have to **sign out and back in on mobile**
+before it will let you send. Since answering from your phone is the entire point,
+verify on mobile specifically before assuming setup is done.
+
+**Every poll fails with `invalid_arguments`**
+
+You're sending a JSON body to a read method. Slack's read endpoints
+(`conversations.history`, `conversations.replies`) require GET with query params;
+only write endpoints take JSON. This looks like a scopes or channel problem and
+is neither.
+
+---
+
 ## Usage
 
 ```bash
